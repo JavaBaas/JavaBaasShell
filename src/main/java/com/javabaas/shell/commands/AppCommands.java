@@ -61,6 +61,7 @@ public class AppCommands implements CommandMarker {
             field.put("name", name);
             rest.postForObject(properties.getHost() + "admin/app/", field, String.class);
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("App added.").reset());
+            set(name);
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
         }
