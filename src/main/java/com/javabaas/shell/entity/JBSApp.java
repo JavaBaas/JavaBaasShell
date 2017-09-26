@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 /**
  * Created by Staryet on 15/9/17.
  */
-@JsonIgnoreProperties({"cloudSetting", "pushAccount", "userCount", "yesterday", "currentMonth"})
-public class JBApp {
+@JsonIgnoreProperties({"cloudSetting", "appAccounts", "userCount", "yesterday", "currentMonth"})
+public class JBSApp {
 
     private String id;
     private String name;

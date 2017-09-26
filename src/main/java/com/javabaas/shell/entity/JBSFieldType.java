@@ -3,7 +3,7 @@ package com.javabaas.shell.entity;
 /**
  * Created by Staryet on 15/6/17.
  */
-public class JBFieldType {
+public class JBSFieldType {
 
     public static final int STRING = 1;
     public static final int NUMBER = 2;

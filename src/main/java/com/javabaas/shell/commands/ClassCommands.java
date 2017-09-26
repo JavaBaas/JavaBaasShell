@@ -1,7 +1,8 @@
 package com.javabaas.shell.commands;
 
+import com.javabaas.javasdk.JBClazz;
 import com.javabaas.shell.common.CommandContext;
-import com.javabaas.shell.entity.JBClass;
+import com.javabaas.shell.entity.JBSClass;
 import com.javabaas.shell.util.PropertiesUtil;
 import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,10 +43,8 @@ public class ClassCommands implements CommandMarker {
     public void find() {
         context.cancelDoubleCheck();
         //显示列表
-        JBClass[] result = rest.getForObject(properties.getHost() + "master/clazz/", JBClass[].class);
-        for (JBClass baasClass : result) {
-            System.out.println(baasClass.getName() + "(" + baasClass.getCount() + ")");
-        }
+        List<JBClazz> list = JBClazz.list();
+        list.forEach(clazz -> System.out.println(clazz.getName() + "(" + clazz.getCount() + ")"));
     }
 
     @CliCommand(value = "set", help = "Set current class.")
@@ -55,7 +55,7 @@ public class ClassCommands implements CommandMarker {
             context.setCurrentClass(null);
         } else {
             try {
-                rest.getForObject(properties.getHost() + "master/clazz/" + name, String.class);
+                JBClazz.get(name);
                 System.out.println(Ansi.ansi().a("Set current class to ").fg(Ansi.Color.GREEN).a(name).reset());
                 context.setCurrentClass(name);
             } catch (HttpClientErrorException e) {
@@ -73,7 +73,8 @@ public class ClassCommands implements CommandMarker {
             context.setDoubleCheck(new DoubleCheckListener() {
                 @Override
                 public void confirm() {
-                    rest.delete(properties.getHost() + "master/clazz/" + name, String.class);
+                    JBClazz clazz = new JBClazz(name);
+                    clazz.delete();
                     context.setCurrentClass(null);
                     System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("Class deleted.").reset());
                 }
@@ -92,10 +93,8 @@ public class ClassCommands implements CommandMarker {
     public void add(@CliOption(key = {""}, mandatory = true) final String name) {
         context.cancelDoubleCheck();
         try {
-            Map<String, Object> field;
-            field = new HashMap<>();
-            field.put("name", name);
-            rest.postForObject(properties.getHost() + "master/clazz/", field, String.class);
+            JBClazz clazz = new JBClazz(name);
+            clazz.save();
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("Class added.").reset());
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());

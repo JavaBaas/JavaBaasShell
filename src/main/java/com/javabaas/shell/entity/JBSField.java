@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * Created by Staryet on 15/8/21.
  */
 @JsonIgnoreProperties({"clazz"})
-public class JBField {
+public class JBSField {
 
     private String id;
     private String name;

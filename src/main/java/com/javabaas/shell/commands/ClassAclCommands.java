@@ -1,9 +1,9 @@
 package com.javabaas.shell.commands;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.javabaas.javasdk.JBClazz;
+import com.javabaas.javasdk.JBUtils;
 import com.javabaas.shell.common.CommandContext;
-import com.javabaas.shell.entity.JBClass;
 import com.javabaas.shell.util.PropertiesUtil;
 import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,11 +41,10 @@ public class ClassAclCommands implements CommandMarker {
     public void getACL() throws JsonProcessingException {
         context.cancelDoubleCheck();
         String className = context.getCurrentClass();
-        ObjectMapper mapper = new ObjectMapper();
         //显示类信息
         try {
-            JBClass baasClass = rest.getForObject(properties.getHost() + "master/clazz/" + className, JBClass.class);
-            System.out.println(mapper.writeValueAsString(baasClass.getAcl()));
+            JBClazz clazz = JBClazz.get(className);
+            System.out.println(clazz.getAcl());
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
         }
@@ -57,7 +56,10 @@ public class ClassAclCommands implements CommandMarker {
         context.cancelDoubleCheck();
         String className = context.getCurrentClass();
         try {
-            rest.postForLocation(properties.getHost() + "master/clazz/" + className + "/acl", acl);
+            JBClazz clazz = new JBClazz(className);
+            JBClazz.JBClazzAcl clazzAcl = JBUtils.readValue(acl, JBClazz.JBClazzAcl.class);
+            clazz.setAcl(clazzAcl);
+            clazz.updateClazzAcl();
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("ACL updated.").reset());
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());

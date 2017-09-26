@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by Staryet on 15/8/23.
@@ -39,11 +40,13 @@ public class RestUtil {
                 HttpRequestWrapper requestWrapper = new HttpRequestWrapper(httpRequest);
                 long timestamp = new Date().getTime();
                 String timestampStr = String.valueOf(timestamp);
+                String nonce = UUID.randomUUID().toString().replace("-", "");
                 requestWrapper.getHeaders().remove("Content-Type");
                 requestWrapper.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
                 requestWrapper.getHeaders().add("JB-Timestamp", timestampStr);
                 requestWrapper.getHeaders().add("JB-Plat", "admin");
-                requestWrapper.getHeaders().add("JB-AdminSign", signUtil.getAdminSign(timestampStr));
+                requestWrapper.getHeaders().add("JB-AdminSign", signUtil.getAdminSign(timestampStr, nonce));
+                requestWrapper.getHeaders().add("JB-Nonce", nonce);
                 return clientHttpRequestExecution.execute(httpRequest, bytes);
             }
         };
@@ -60,12 +63,14 @@ public class RestUtil {
                 HttpRequestWrapper requestWrapper = new HttpRequestWrapper(httpRequest);
                 long timestamp = new Date().getTime();
                 String timestampStr = String.valueOf(timestamp);
+                String nonce = UUID.randomUUID().toString().replace("-", "");
                 requestWrapper.getHeaders().remove("Content-Type");
                 requestWrapper.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
                 requestWrapper.getHeaders().add("JB-Timestamp", timestampStr);
                 requestWrapper.getHeaders().add("JB-Plat", "admin");
                 requestWrapper.getHeaders().add("JB-AppId", commandContext.getCurrentApp().getId());
-                requestWrapper.getHeaders().add("JB-MasterSign", signUtil.getMasterSign(timestampStr));
+                requestWrapper.getHeaders().add("JB-MasterSign", signUtil.getMasterSign(timestampStr, nonce));
+                requestWrapper.getHeaders().add("JB-Nonce", nonce);
                 return clientHttpRequestExecution.execute(httpRequest, bytes);
             }
         };

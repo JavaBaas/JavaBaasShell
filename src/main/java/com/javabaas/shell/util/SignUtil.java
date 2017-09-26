@@ -22,16 +22,16 @@ public class SignUtil {
         return String.valueOf(new Date().getTime());
     }
 
-    public String getSign(String timestamp) {
-        return DigestUtils.md5DigestAsHex((commandContext.getCurrentApp().getKey() + ":" + timestamp).getBytes());
+    public String getSign(String timestamp, String nonce) {
+        return DigestUtils.md5DigestAsHex((commandContext.getCurrentApp().getKey() + ":" + timestamp + ":" + nonce).getBytes());
     }
 
-    public String getMasterSign(String timestamp) {
-        return DigestUtils.md5DigestAsHex((commandContext.getCurrentApp().getMasterKey() + ":" + timestamp).getBytes());
+    public String getMasterSign(String timestamp, String nonce) {
+        return DigestUtils.md5DigestAsHex((commandContext.getCurrentApp().getMasterKey() + ":" + timestamp + ":" + nonce).getBytes());
     }
 
-    public String getAdminSign(String timestamp) {
-        return DigestUtils.md5DigestAsHex((propertiesUtil.getKey() + ":" + timestamp).getBytes());
+    public String getAdminSign(String timestamp, String nonce) {
+        return DigestUtils.md5DigestAsHex((propertiesUtil.getKey() + ":" + timestamp + ":" + nonce).getBytes());
     }
 
     public String getAppId() {

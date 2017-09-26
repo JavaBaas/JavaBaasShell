@@ -2,9 +2,11 @@ package com.javabaas.shell.commands;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.javabaas.javasdk.JBObject;
+import com.javabaas.javasdk.JBUtils;
 import com.javabaas.shell.common.CommandContext;
-import com.javabaas.shell.entity.JBField;
-import com.javabaas.shell.entity.JBObject;
+import com.javabaas.shell.entity.JBSField;
+import com.javabaas.shell.entity.JBSObject;
 import com.javabaas.shell.entity.JBSimpleResult;
 import com.javabaas.shell.util.DateUtil;
 import com.javabaas.shell.util.FieldUtil;
@@ -50,12 +52,14 @@ public class ObjectCommands implements CommandMarker {
     }
 
     @CliCommand(value = "add", help = "Add object.")
-    public void add(@CliOption(key = {""}, mandatory = true, help = "Object by json.") final String object)
+    public void add(@CliOption(key = {""}, mandatory = true, help = "Object by json.") final String string)
             throws JsonProcessingException {
         context.cancelDoubleCheck();
         String className = context.getCurrentClass();
         try {
-            rest.postForLocation(properties.getHost() + "object/" + className, object);
+            Map<String, Object> map = JBUtils.readValue(string, Map.class);
+            JBObject object = JBUtils.parseObjectFromMap(map);
+            object.save();
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("Object added.").reset());
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
@@ -106,8 +110,8 @@ public class ObjectCommands implements CommandMarker {
             params.put("skip", skip);
         }
         try {
-            JBObject[] result = rest.getForObject(url, JBObject[].class, params);
-            for (JBObject baasObject : result) {
+            JBSObject[] result = rest.getForObject(url, JBSObject[].class, params);
+            for (JBSObject baasObject : result) {
                 System.out.println(mapper.writeValueAsString(baasObject));
             }
         } catch (HttpClientErrorException e) {
@@ -135,8 +139,8 @@ public class ObjectCommands implements CommandMarker {
             at.addRule();
             //控制列宽度
             WidthFixedColumns width = new WidthFixedColumns();
-            JBObject[] result = rest.getForObject(url, JBObject[].class, params);
-            JBField[] fields = rest.getForObject(properties.getHost() + "master/clazz/" + className + "/field", JBField[].class);
+            JBSObject[] result = rest.getForObject(url, JBSObject[].class, params);
+            JBSField[] fields = rest.getForObject(properties.getHost() + "master/clazz/" + className + "/field", JBSField[].class);
             //整理表头
             List<Object> headers = new LinkedList<>();
             List<Object> types = new LinkedList<>();
@@ -167,7 +171,7 @@ public class ObjectCommands implements CommandMarker {
                 width.add(20);
             }
             //自定义字段
-            for (JBField field : fields) {
+            for (JBSField field : fields) {
                 headers.add(field.getName());
                 types.add(FieldUtil.getFieldType(field.getType()));
                 width.add(20);
@@ -175,7 +179,7 @@ public class ObjectCommands implements CommandMarker {
             at.addRow(headers.toArray());
             at.addRow(types.toArray());
             at.addStrongRule();
-            for (JBObject baasObject : result) {
+            for (JBSObject baasObject : result) {
                 List<Object> cols = new LinkedList<>();
                 cols.add(baasObject.get("_id"));
                 for (String key : baasObject.keySet()) {
@@ -207,7 +211,7 @@ public class ObjectCommands implements CommandMarker {
                         cols.add("");
                     }
                 }
-                for (JBField field : fields) {
+                for (JBSField field : fields) {
                     Object value = baasObject.get(field.getName());
                     if (value == null) {
                         cols.add("");

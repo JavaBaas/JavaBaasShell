@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * Created by Staryet on 15/8/21.
  */
 @JsonIgnoreProperties({"app"})
-public class JBClass {
+public class JBSClass {
 
     private String id;
     private String name;

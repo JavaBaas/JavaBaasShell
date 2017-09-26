@@ -1,8 +1,10 @@
 package com.javabaas.shell.commands;
 
+import com.javabaas.javasdk.JBClazz;
+import com.javabaas.javasdk.JBField;
 import com.javabaas.shell.common.CommandContext;
-import com.javabaas.shell.entity.JBField;
-import com.javabaas.shell.entity.JBFieldType;
+import com.javabaas.shell.entity.JBSField;
+import com.javabaas.shell.entity.JBSFieldType;
 import com.javabaas.shell.util.PropertiesUtil;
 import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +17,9 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,45 +49,44 @@ public class FieldCommands implements CommandMarker {
     public void find() {
         context.cancelDoubleCheck();
         String className = context.getCurrentClass();
-        JBField[] result = rest.getForObject(properties.getHost() + "master/clazz/" + className + "/field", JBField[].class);
-        for (JBField baasField : result) {
+        List<JBField> list = JBField.list(className);
+        list.forEach(baasField -> {
             String typeString;
             switch (baasField.getType()) {
-                case JBFieldType.STRING:
+                case JBSFieldType.STRING:
                     typeString = "<STRING>  ";
                     break;
-                case JBFieldType.NUMBER:
+                case JBSFieldType.NUMBER:
                     typeString = "<NUMBER>  ";
                     break;
-                case JBFieldType.BOOLEAN:
+                case JBSFieldType.BOOLEAN:
                     typeString = "<BOOLEAN> ";
                     break;
-                case JBFieldType.DATE:
+                case JBSFieldType.DATE:
                     typeString = "<DATE>    ";
                     break;
-                case JBFieldType.FILE:
+                case JBSFieldType.FILE:
                     typeString = "<FILE>    ";
                     break;
-                case JBFieldType.OBJECT:
+                case JBSFieldType.OBJECT:
                     typeString = "<OBJECT>  ";
                     break;
-                case JBFieldType.ARRAY:
+                case JBSFieldType.ARRAY:
                     typeString = "<ARRAY>   ";
                     break;
-                case JBFieldType.POINTER:
+                case JBSFieldType.POINTER:
                     typeString = "<POINTER> ";
                     break;
-                case JBFieldType.GEOPOINT:
+                default:
                     typeString = "<GEOPOINT>";
                     break;
-                default:
-                    continue;
             }
             String internalString = baasField.isInternal() ? "I" : " ";
             String securityString = baasField.isSecurity() ? "S" : " ";
             String requiredString = baasField.isRequired() ? "R" : " ";
             System.out.println(Ansi.ansi().fg(Ansi.Color.YELLOW).a(internalString).fg(Ansi.Color.RED).a(securityString).fg(Ansi.Color.GREEN).a(requiredString).fg(Ansi.Color.CYAN).a(typeString).reset().a(baasField.getName()));
-        }
+
+        });
     }
 
     @CliCommand(value = "field del", help = "Delete field.")
@@ -96,7 +99,10 @@ public class FieldCommands implements CommandMarker {
             context.setDoubleCheck(new DoubleCheckListener() {
                 @Override
                 public void confirm() {
-                    rest.delete(properties.getHost() + "master/clazz/" + className + "/field/" + fieldName, String.class);
+                    JBField field = new JBField();
+                    field.setClazz(new JBClazz(className));
+                    field.setName(fieldName);
+                    field.delete();
                     System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("Field deleted.").reset());
                 }
 
@@ -116,10 +122,9 @@ public class FieldCommands implements CommandMarker {
         context.cancelDoubleCheck();
         String className = context.getCurrentClass();
         try {
-            Map<String, Object> field = new HashMap<>();
-            field.put("name", fieldName);
-            field.put("type", type);
-            rest.postForObject(properties.getHost() + "master/clazz/" + className + "/field", field, String.class);
+            JBField field = new JBField(Integer.parseInt(type), fieldName);
+            field.setClazz(new JBClazz(className));
+            field.save();
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("Field added.").reset());
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
@@ -150,9 +155,11 @@ public class FieldCommands implements CommandMarker {
         context.cancelDoubleCheck();
         String className = context.getCurrentClass();
         try {
-            Map<String, Object> params = new HashMap<>();
-            params.put("security", security);
-            rest.put(properties.getHost() + "master/clazz/" + className + "/field/" + fieldName + "/security?security={security}", null, params);
+            JBField field = new JBField();
+            field.setClazz(new JBClazz(className));
+            field.setName(fieldName);
+            field.setSecurity(security);
+            field.update();
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("Field security updated.").reset());
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
@@ -163,9 +170,11 @@ public class FieldCommands implements CommandMarker {
         context.cancelDoubleCheck();
         String className = context.getCurrentClass();
         try {
-            Map<String, Object> params = new HashMap<>();
-            params.put("required", required);
-            rest.put(properties.getHost() + "master/clazz/" + className + "/field/" + fieldName + "/required?required={required}", null, params);
+            JBField field = new JBField();
+            field.setClazz(new JBClazz(className));
+            field.setName(fieldName);
+            field.setRequired(required);
+            field.update();
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("Field required updated.").reset());
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());

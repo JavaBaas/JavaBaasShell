@@ -70,7 +70,12 @@
         <dependency>
             <groupId>com.qiniu</groupId>
             <artifactId>qiniu-java-sdk</artifactId>
-            <version>7.0.4.2</version>
+            <version>[7.2.0, 7.2.99]</version>
+        </dependency>
+        <dependency>
+            <groupId>com.javabaas</groupId>
+            <artifactId>javasdk</artifactId>
+            <version>1.0</version>
         </dependency>
 
     </dependencies>
