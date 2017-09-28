@@ -3,8 +3,8 @@ package com.javabaas.shell.commands;
 import com.javabaas.javasdk.JBClazz;
 import com.javabaas.javasdk.JBField;
 import com.javabaas.shell.common.CommandContext;
-import com.javabaas.shell.entity.JBSField;
 import com.javabaas.shell.entity.JBSFieldType;
+import com.javabaas.shell.util.ASKUtil;
 import com.javabaas.shell.util.PropertiesUtil;
 import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,10 +17,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
-import java.io.File;
-import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Staryet on 15/8/20.
@@ -117,12 +115,13 @@ public class FieldCommands implements CommandMarker {
     }
 
     @CliCommand(value = "field add", help = "Add field.")
-    public void add(@CliOption(key = {""}, mandatory = true) final String fieldName,
-                    @CliOption(key = {"type"}, mandatory = false, unspecifiedDefaultValue = "1") final String type) {
+    public void add(@CliOption(key = {""}, mandatory = true) final String fieldName) {
         context.cancelDoubleCheck();
         String className = context.getCurrentClass();
         try {
-            JBField field = new JBField(Integer.parseInt(type), fieldName);
+            List<String> types = getFieldTypes();
+            int type = ASKUtil.askNumber(types, "请选择Field type，默认为STRING", 1);
+            JBField field = new JBField(type, fieldName);
             field.setClazz(new JBClazz(className));
             field.save();
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("Field added.").reset());
@@ -193,6 +192,19 @@ public class FieldCommands implements CommandMarker {
         System.out.println(Ansi.ansi().fg(Ansi.Color.WHITE).a("7").fg(Ansi.Color.CYAN).a(" ARRAY").reset());
         System.out.println(Ansi.ansi().fg(Ansi.Color.WHITE).a("8").fg(Ansi.Color.CYAN).a(" POINTER").reset());
         System.out.println(Ansi.ansi().fg(Ansi.Color.WHITE).a("9").fg(Ansi.Color.CYAN).a(" GEOPOINT").reset());
+    }
+
+    private LinkedList<String> getFieldTypes() {
+        LinkedList<String> list = new LinkedList<>();
+        list.add("STRING");
+        list.add("NUMBER");
+        list.add("BOOLEAN");
+        list.add("DATE");
+        list.add("FILE");
+        list.add("OBJECT");
+        list.add("ARRAY");
+        list.add("POINTER");
+        return list;
     }
 
 }

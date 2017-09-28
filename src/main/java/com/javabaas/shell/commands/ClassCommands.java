@@ -2,7 +2,6 @@ package com.javabaas.shell.commands;
 
 import com.javabaas.javasdk.JBClazz;
 import com.javabaas.shell.common.CommandContext;
-import com.javabaas.shell.entity.JBSClass;
 import com.javabaas.shell.util.PropertiesUtil;
 import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +14,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Staryet on 15/8/20.

@@ -3,7 +3,6 @@ package com.javabaas.shell.common;
 import com.javabaas.javasdk.JBApp;
 import com.javabaas.javasdk.JBConfig;
 import com.javabaas.shell.commands.DoubleCheckListener;
-import com.javabaas.shell.entity.JBSApp;
 import com.javabaas.shell.provider.PromptProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

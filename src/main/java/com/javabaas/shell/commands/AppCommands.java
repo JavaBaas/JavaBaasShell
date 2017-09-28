@@ -2,10 +2,7 @@ package com.javabaas.shell.commands;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.javabaas.javasdk.JBApp;
-import com.javabaas.javasdk.JBException;
-import com.javabaas.javasdk.callback.JBAppListCallback;
 import com.javabaas.shell.common.CommandContext;
-import com.javabaas.shell.entity.JBSApp;
 import com.javabaas.shell.util.PropertiesUtil;
 import com.javabaas.shell.util.SignUtil;
 import org.fusesource.jansi.Ansi;
@@ -19,9 +16,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /**
