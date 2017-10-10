@@ -1,6 +1,7 @@
 package com.javabaas.shell.commands;
 
 import com.javabaas.javasdk.JBClazz;
+import com.javabaas.javasdk.JBUtils;
 import com.javabaas.shell.common.CommandContext;
 import com.javabaas.shell.util.PropertiesUtil;
 import org.fusesource.jansi.Ansi;
@@ -102,8 +103,8 @@ public class ClassCommands implements CommandMarker {
     public void export(@CliOption(key = {""}, mandatory = true) final String name) {
         context.cancelDoubleCheck();
         try {
-            String appExport = rest.getForObject(properties.getHost() + "master/clazz/" + name + "/export", String.class);
-            System.out.println(appExport);
+            JBClazz.JBClazzExport clazzExport = JBClazz.export(name);
+            System.out.println(JBUtils.writeValueAsString(clazzExport));
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
         }
@@ -113,7 +114,7 @@ public class ClassCommands implements CommandMarker {
     public void importData(@CliOption(key = {""}, help = "clazz", mandatory = true) final String clazz) {
         context.cancelDoubleCheck();
         try {
-            rest.postForObject(properties.getHost() + "master/clazz/import", clazz, String.class);
+            JBClazz.importData(clazz);
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("Clazz imported.").reset());
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());

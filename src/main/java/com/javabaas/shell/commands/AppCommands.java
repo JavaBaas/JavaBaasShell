@@ -2,6 +2,7 @@ package com.javabaas.shell.commands;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.javabaas.javasdk.JBApp;
+import com.javabaas.javasdk.JBUtils;
 import com.javabaas.shell.common.CommandContext;
 import com.javabaas.shell.util.PropertiesUtil;
 import com.javabaas.shell.util.SignUtil;
@@ -105,6 +106,7 @@ public class AppCommands implements CommandMarker {
             });
             //未找到应用
             if (!flag[0]) {
+
                 System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a("App not found!").reset());
             }
         } catch (HttpClientErrorException e) {
@@ -145,8 +147,8 @@ public class AppCommands implements CommandMarker {
     public void export() {
         context.cancelDoubleCheck();
         JBApp app = context.getCurrentApp();
-        String appExport = rest.getForObject(properties.getHost() + "admin/app/" + app.getId() + "/export", String.class);
-        System.out.println(appExport);
+        JBApp.JBAppExport appExport = JBApp.export(app.getId());
+        System.out.println(JBUtils.writeValueAsString(appExport));
     }
 
     @CliCommand(value = "info", help = "Get app info")
@@ -161,7 +163,8 @@ public class AppCommands implements CommandMarker {
     public void importData(@CliOption(key = {""}, mandatory = true, help = "app name") final String app) {
         context.cancelDoubleCheck();
         try {
-            rest.postForObject(properties.getHost() + "admin/app/import", app, String.class);
+            JBApp.importData(app);
+//            rest.postForObject(properties.getHost() + "admin/app/import", app, String.class);
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("App imported.").reset());
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
