@@ -3,7 +3,6 @@ package com.javabaas.shell.commands;
 import com.javabaas.javasdk.JBClazz;
 import com.javabaas.javasdk.JBUtils;
 import com.javabaas.shell.common.CommandContext;
-import com.javabaas.shell.util.PropertiesUtil;
 import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.core.CommandMarker;
@@ -12,9 +11,7 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.Resource;
 import java.util.List;
 
 /**
@@ -27,10 +24,6 @@ public class ClassCommands implements CommandMarker {
 
     @Autowired
     private CommandContext context;
-    @Autowired
-    private PropertiesUtil properties;
-    @Resource(name = "MasterRestTemplate")
-    private RestTemplate rest;
 
     @CliAvailabilityIndicator({"classes", "set", "class add", "class del", "class export", "class import"})
     public boolean isAvailable() {

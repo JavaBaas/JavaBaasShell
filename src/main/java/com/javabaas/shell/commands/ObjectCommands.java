@@ -21,9 +21,7 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.Resource;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -38,10 +36,6 @@ public class ObjectCommands implements CommandMarker {
 
     @Autowired
     private CommandContext context;
-    @Autowired
-    private PropertiesUtil properties;
-    @Resource(name = "MasterRestTemplate")
-    private RestTemplate rest;
 
     @CliAvailabilityIndicator({"add", "del", "update", "list", "table", "url", "count", "sort"})
     public boolean isAvailable() {
@@ -241,12 +235,18 @@ public class ObjectCommands implements CommandMarker {
     @CliCommand(value = "url", help = "Show object url.")
     public void url() {
         context.cancelDoubleCheck();
-        String className = context.getCurrentClass();
-        System.out.println(Ansi.ansi().fg(Ansi.Color.CYAN).a("GET    ").reset().a(properties.getHost() + "object/" + className));
-        System.out.println(Ansi.ansi().fg(Ansi.Color.CYAN).a("GET    ").reset().a(properties.getHost() + "object/" + className + "/{id}"));
-        System.out.println(Ansi.ansi().fg(Ansi.Color.CYAN).a("POST    ").reset().a(properties.getHost() + "object/" + className));
-        System.out.println(Ansi.ansi().fg(Ansi.Color.CYAN).a("PUT    ").reset().a(properties.getHost() + "object/" + className + "/{id}"));
-        System.out.println(Ansi.ansi().fg(Ansi.Color.CYAN).a("DELETE    ").reset().a(properties.getHost() + "object/" + className + "/{id}"));
+        try {
+
+            String className = context.getCurrentClass();
+            PropertiesUtil properties = new PropertiesUtil();
+            System.out.println(Ansi.ansi().fg(Ansi.Color.CYAN).a("GET    ").reset().a(properties.getHost() + "object/" + className));
+            System.out.println(Ansi.ansi().fg(Ansi.Color.CYAN).a("GET    ").reset().a(properties.getHost() + "object/" + className + "/{id}"));
+            System.out.println(Ansi.ansi().fg(Ansi.Color.CYAN).a("POST    ").reset().a(properties.getHost() + "object/" + className));
+            System.out.println(Ansi.ansi().fg(Ansi.Color.CYAN).a("PUT    ").reset().a(properties.getHost() + "object/" + className + "/{id}"));
+            System.out.println(Ansi.ansi().fg(Ansi.Color.CYAN).a("DELETE    ").reset().a(properties.getHost() + "object/" + className + "/{id}"));
+        } catch (Exception e) {
+
+        }
     }
 
     @CliCommand(value = "count", help = "Count objects in class.")

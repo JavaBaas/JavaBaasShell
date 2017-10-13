@@ -5,7 +5,6 @@ import com.javabaas.javasdk.JBField;
 import com.javabaas.shell.common.CommandContext;
 import com.javabaas.shell.entity.JBSFieldType;
 import com.javabaas.shell.util.ASKUtil;
-import com.javabaas.shell.util.PropertiesUtil;
 import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.core.CommandMarker;
@@ -14,9 +13,7 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.Resource;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -30,10 +27,6 @@ public class FieldCommands implements CommandMarker {
 
     @Autowired
     private CommandContext context;
-    @Autowired
-    private PropertiesUtil properties;
-    @Resource(name = "MasterRestTemplate")
-    private RestTemplate rest;
 
     @CliAvailabilityIndicator({"fields", "field add", "field del", "field r", "field nr", "field s", "field ns", "field type"})
     public boolean isAvailable() {

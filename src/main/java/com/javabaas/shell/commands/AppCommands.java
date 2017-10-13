@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.javabaas.javasdk.JBApp;
 import com.javabaas.javasdk.JBUtils;
 import com.javabaas.shell.common.CommandContext;
+import com.javabaas.shell.util.ASKUtil;
 import com.javabaas.shell.util.PropertiesUtil;
 import com.javabaas.shell.util.SignUtil;
 import org.fusesource.jansi.Ansi;
@@ -14,9 +15,8 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,10 +30,6 @@ public class AppCommands implements CommandMarker {
 
     @Autowired
     private CommandContext context;
-    @Resource(name = "AdminRestTemplate")
-    private RestTemplate rest;
-    @Resource(name = "MasterRestTemplate")
-    private RestTemplate masterRest;
     @Autowired
     private SignUtil signUtil;
     @Autowired
@@ -190,21 +186,39 @@ public class AppCommands implements CommandMarker {
     }
 
     @CliCommand(value = "account", help = "Set Account.")
-    public void setAccount(@CliOption(key = {""}, mandatory = true, help = "Input") final String input) throws JsonProcessingException {
+    public void setAccount() throws JsonProcessingException {
         context.cancelDoubleCheck();
-        String[] inputs = input.split(" ");
-        if (inputs.length < 2) {
-            System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a("No Account!").reset());
-            return;
-        }
-        String type = inputs[0];
-        String account = inputs[1];
         try {
-            masterRest.put(properties.getHost() + "master/account/setAccount/" + type, account);
+            List<String> accountTypes = getAccountTypes();
+            int accountType = ASKUtil.askNumber(accountTypes, "请选择Account Type， 默认为push", 1);
+            String key = ASKUtil.askString("请输入key值");
+            if (JBUtils.isEmpty(key)) {
+                System.out.println("Set Account End!");
+                return;
+            }
+            String secret = ASKUtil.askString("请输入secret值");
+            if (JBUtils.isEmpty(secret)) {
+                System.out.println("Set Account End!");
+                return;
+            }
+
+            JBApp.Account account = new JBApp.Account();
+            account.setKey(key);
+            account.setSecret(secret);
+
+            JBApp.setAccount(JBApp.AccountType.getType(accountType), account);
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("Object updated.").reset());
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
         }
+    }
+
+    private List<String> getAccountTypes() {
+        List<String> list = new ArrayList<>();
+        for (JBApp.AccountType type : JBApp.AccountType.values()) {
+            list.add(type.getValue());
+        }
+        return list;
     }
 
 }

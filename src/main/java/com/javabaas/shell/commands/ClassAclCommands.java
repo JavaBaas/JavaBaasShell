@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.javabaas.javasdk.JBClazz;
 import com.javabaas.javasdk.JBUtils;
 import com.javabaas.shell.common.CommandContext;
-import com.javabaas.shell.util.PropertiesUtil;
 import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.core.CommandMarker;
@@ -13,9 +12,6 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
-
-import javax.annotation.Resource;
 
 /**
  * Created by Staryet on 15/8/20.
@@ -27,10 +23,6 @@ public class ClassAclCommands implements CommandMarker {
 
     @Autowired
     private CommandContext context;
-    @Autowired
-    private PropertiesUtil properties;
-    @Resource(name = "MasterRestTemplate")
-    private RestTemplate rest;
 
     @CliAvailabilityIndicator({"acls", "acl set"})
     public boolean isAvailable() {

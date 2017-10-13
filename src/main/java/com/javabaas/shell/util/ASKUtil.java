@@ -25,6 +25,17 @@ public class ASKUtil {
 
     }
 
+    public static String askString(String message) {
+        try {
+            ConsoleReader consoleReader = new ConsoleReader();
+            System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(message));
+            return consoleReader.readLine(" " + ">" );
+        } catch (Exception e) {
+            return null;
+        }
+
+    }
+
     private static String ask(List<String> values, String message, int defalut) {
         try {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(message));
@@ -40,7 +51,6 @@ public class ASKUtil {
         } catch (Exception e) {
             return null;
         }
-
     }
 
 }
