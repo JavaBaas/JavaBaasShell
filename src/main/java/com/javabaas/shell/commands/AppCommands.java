@@ -1,8 +1,10 @@
 package com.javabaas.shell.commands;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.javabaas.javasdk.JBApp;
+import com.javabaas.javasdk.JBUtils;
 import com.javabaas.shell.common.CommandContext;
-import com.javabaas.shell.entity.JBApp;
-import com.javabaas.shell.util.PropertiesUtil;
+import com.javabaas.shell.util.ASKUtil;
 import com.javabaas.shell.util.SignUtil;
 import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,11 +14,10 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.Resource;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by Codi on 15/9/22.
@@ -28,12 +29,8 @@ public class AppCommands implements CommandMarker {
 
     @Autowired
     private CommandContext context;
-    @Resource(name = "AdminRestTemplate")
-    private RestTemplate rest;
     @Autowired
     private SignUtil signUtil;
-    @Autowired
-    private PropertiesUtil properties;
 
     @CliAvailabilityIndicator({"export", "info"})
     public boolean isAvailable() {
@@ -44,10 +41,18 @@ public class AppCommands implements CommandMarker {
     public void list() {
         context.cancelDoubleCheck();
         try {
-            JBApp[] result = rest.getForObject(properties.getHost() + "admin/app/", JBApp[].class);
-            for (JBApp app : result) {
-                System.out.println(app.getName());
-            }
+            List<JBApp> list = JBApp.list();
+            list.forEach(o -> System.out.println(o.getName()));
+//            JBApp.listInBackground(new JBAppListCallback() {
+//                @Override
+//                public void done(boolean success, List<JBApp> list, JBException e) {
+//                    if (success) {
+//                        list.forEach(o -> System.out.println(o.getName()));
+//                    } else {
+//                        System.out.println(e.getMessage());
+//                    }
+//                }
+//            });
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
         }
@@ -57,9 +62,9 @@ public class AppCommands implements CommandMarker {
     public void add(@CliOption(key = {""}, mandatory = true) final String name) {
         context.cancelDoubleCheck();
         try {
-            Map<String, Object> field = new HashMap<>();
-            field.put("name", name);
-            rest.postForObject(properties.getHost() + "admin/app/", field, String.class);
+            JBApp app = new JBApp();
+            app.setName(name);
+            app.save();
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("App added.").reset());
             set(name);
         } catch (HttpClientErrorException e) {
@@ -72,28 +77,31 @@ public class AppCommands implements CommandMarker {
         context.cancelDoubleCheck();
         //显示类信息
         try {
-            JBApp[] apps = rest.getForObject(properties.getHost() + "admin/app/", JBApp[].class);
-            for (JBApp app : apps) {
+            List<JBApp> list = JBApp.list();
+            final boolean[] flag = {false};
+            list.forEach(app -> {
                 if (app.getName().equals(name)) {
+                    flag[0] = true;
                     System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a("Do you really want to delete? (Y/N)"));
                     context.setDoubleCheck(new DoubleCheckListener() {
                         @Override
                         public void confirm() {
-                            rest.delete(properties.getHost() + "admin/app/" + app.getId(), String.class);
+                            app.delete();
                             context.setCurrentApp(null);
                             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("App deleted.").reset());
                         }
-
                         @Override
                         public void cancel() {
 
                         }
                     });
-                    return;
                 }
-            }
+            });
             //未找到应用
-            System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a("App not found!").reset());
+            if (!flag[0]) {
+
+                System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a("App not found!").reset());
+            }
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
         }
@@ -107,17 +115,21 @@ public class AppCommands implements CommandMarker {
             context.setCurrentApp(null);
         } else {
             try {
-                JBApp[] apps = rest.getForObject(properties.getHost() + "admin/app/", JBApp[].class);
-                for (JBApp app : apps) {
+                List<JBApp> list = JBApp.list();
+                final boolean[] flag = {false};
+                list.forEach(app -> {
                     if (app.getName().equals(name)) {
-                        rest.getForObject(properties.getHost() + "admin/app/" + app.getId(), String.class);
-                        System.out.println("Set current app to " + Ansi.ansi().fg(Ansi.Color.GREEN).a(app.getName()).reset());
-                        context.setCurrentApp(app);
+                        JBApp jbApp = JBApp.get(app.getId());
+                        flag[0] = true;
+                        System.out.println("Set current app to " + Ansi.ansi().fg(Ansi.Color.GREEN).a(jbApp.getName()).reset());
+                        context.setCurrentApp(jbApp);
                         return;
                     }
-                }
+                });
                 //未找到应用
-                System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a("App not found!").reset());
+                if (!flag[0]) {
+                    System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a("App not found!").reset());
+                }
             } catch (HttpClientErrorException e) {
                 System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
             }
@@ -128,23 +140,24 @@ public class AppCommands implements CommandMarker {
     public void export() {
         context.cancelDoubleCheck();
         JBApp app = context.getCurrentApp();
-        String appExport = rest.getForObject(properties.getHost() + "admin/app/" + app.getId() + "/export", String.class);
-        System.out.println(appExport);
+        JBApp.JBAppExport appExport = JBApp.export(app.getId());
+        System.out.println(JBUtils.writeValueAsString(appExport));
     }
 
     @CliCommand(value = "info", help = "Get app info")
     public void appInfo() {
         context.cancelDoubleCheck();
         JBApp app = context.getCurrentApp();
-        String appInfo = rest.getForObject(properties.getHost() + "admin/app/" + app.getId(), String.class);
-        System.out.println(appInfo);
+        JBApp jbApp = JBApp.get(app.getId());
+        System.out.println(jbApp);
     }
 
     @CliCommand(value = "import", help = "Import tha app.")
     public void importData(@CliOption(key = {""}, mandatory = true, help = "app name") final String app) {
         context.cancelDoubleCheck();
         try {
-            rest.postForObject(properties.getHost() + "admin/app/import", app, String.class);
+            JBApp.importData(app);
+//            rest.postForObject(properties.getHost() + "admin/app/import", app, String.class);
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("App imported.").reset());
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
@@ -156,15 +169,53 @@ public class AppCommands implements CommandMarker {
         context.cancelDoubleCheck();
         //获取令牌
         String timestamp = signUtil.getTimestamp();
+        String nonce = UUID.randomUUID().toString().replace("-", "");
         System.out.println("Timestamp:  " + timestamp);
-        System.out.println("AdminSign:  " + signUtil.getAdminSign(timestamp));
+        System.out.println("Nonce:  " + nonce);
+        System.out.println("AdminSign:  " + signUtil.getAdminSign(timestamp, nonce));
         if (context.getCurrentApp() != null) {
             System.out.println("AppId:  " + signUtil.getAppId());
             System.out.println("Key:  " + context.getCurrentApp().getKey());
             System.out.println("MasterKey:  " + context.getCurrentApp().getMasterKey());
-            System.out.println("Sign:  " + signUtil.getSign(timestamp));
-            System.out.println("MasterSign:  " + signUtil.getMasterSign(timestamp));
+            System.out.println("Sign:  " + signUtil.getSign(timestamp, nonce));
+            System.out.println("MasterSign:  " + signUtil.getMasterSign(timestamp, nonce));
         }
+    }
+
+    @CliCommand(value = "account", help = "Set Account.")
+    public void setAccount() throws JsonProcessingException {
+        context.cancelDoubleCheck();
+        try {
+            List<String> accountTypes = getAccountTypes();
+            int accountType = ASKUtil.askNumber(accountTypes, "请选择Account Type， 默认为push", 1);
+            String key = ASKUtil.askString("请输入key值");
+            if (JBUtils.isEmpty(key)) {
+                System.out.println("Set Account End!");
+                return;
+            }
+            String secret = ASKUtil.askString("请输入secret值");
+            if (JBUtils.isEmpty(secret)) {
+                System.out.println("Set Account End!");
+                return;
+            }
+
+            JBApp.Account account = new JBApp.Account();
+            account.setKey(key);
+            account.setSecret(secret);
+
+            JBApp.setAccount(JBApp.AccountType.getType(accountType), account);
+            System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("Object updated.").reset());
+        } catch (HttpClientErrorException e) {
+            System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
+        }
+    }
+
+    private List<String> getAccountTypes() {
+        List<String> list = new ArrayList<>();
+        for (JBApp.AccountType type : JBApp.AccountType.values()) {
+            list.add(type.getValue());
+        }
+        return list;
     }
 
 }

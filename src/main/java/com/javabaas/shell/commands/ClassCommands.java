@@ -1,8 +1,8 @@
 package com.javabaas.shell.commands;
 
+import com.javabaas.javasdk.JBClazz;
+import com.javabaas.javasdk.JBUtils;
 import com.javabaas.shell.common.CommandContext;
-import com.javabaas.shell.entity.JBClass;
-import com.javabaas.shell.util.PropertiesUtil;
 import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.core.CommandMarker;
@@ -11,11 +11,8 @@ import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.Resource;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 /**
  * Created by Staryet on 15/8/20.
@@ -27,10 +24,6 @@ public class ClassCommands implements CommandMarker {
 
     @Autowired
     private CommandContext context;
-    @Autowired
-    private PropertiesUtil properties;
-    @Resource(name = "MasterRestTemplate")
-    private RestTemplate rest;
 
     @CliAvailabilityIndicator({"classes", "set", "class add", "class del", "class export", "class import"})
     public boolean isAvailable() {
@@ -41,10 +34,8 @@ public class ClassCommands implements CommandMarker {
     public void find() {
         context.cancelDoubleCheck();
         //显示列表
-        JBClass[] result = rest.getForObject(properties.getHost() + "master/clazz/", JBClass[].class);
-        for (JBClass baasClass : result) {
-            System.out.println(baasClass.getName() + "(" + baasClass.getCount() + ")");
-        }
+        List<JBClazz> list = JBClazz.list();
+        list.forEach(clazz -> System.out.println(clazz.getName() + "(" + clazz.getCount() + ")"));
     }
 
     @CliCommand(value = "set", help = "Set current class.")
@@ -55,7 +46,7 @@ public class ClassCommands implements CommandMarker {
             context.setCurrentClass(null);
         } else {
             try {
-                rest.getForObject(properties.getHost() + "master/clazz/" + name, String.class);
+                JBClazz.get(name);
                 System.out.println(Ansi.ansi().a("Set current class to ").fg(Ansi.Color.GREEN).a(name).reset());
                 context.setCurrentClass(name);
             } catch (HttpClientErrorException e) {
@@ -73,7 +64,8 @@ public class ClassCommands implements CommandMarker {
             context.setDoubleCheck(new DoubleCheckListener() {
                 @Override
                 public void confirm() {
-                    rest.delete(properties.getHost() + "master/clazz/" + name, String.class);
+                    JBClazz clazz = new JBClazz(name);
+                    clazz.delete();
                     context.setCurrentClass(null);
                     System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("Class deleted.").reset());
                 }
@@ -92,10 +84,8 @@ public class ClassCommands implements CommandMarker {
     public void add(@CliOption(key = {""}, mandatory = true) final String name) {
         context.cancelDoubleCheck();
         try {
-            Map<String, Object> field;
-            field = new HashMap<>();
-            field.put("name", name);
-            rest.postForObject(properties.getHost() + "master/clazz/", field, String.class);
+            JBClazz clazz = new JBClazz(name);
+            clazz.save();
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("Class added.").reset());
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
@@ -106,8 +96,8 @@ public class ClassCommands implements CommandMarker {
     public void export(@CliOption(key = {""}, mandatory = true) final String name) {
         context.cancelDoubleCheck();
         try {
-            String appExport = rest.getForObject(properties.getHost() + "master/clazz/" + name + "/export", String.class);
-            System.out.println(appExport);
+            JBClazz.JBClazzExport clazzExport = JBClazz.export(name);
+            System.out.println(JBUtils.writeValueAsString(clazzExport));
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
         }
@@ -117,7 +107,7 @@ public class ClassCommands implements CommandMarker {
     public void importData(@CliOption(key = {""}, help = "clazz", mandatory = true) final String clazz) {
         context.cancelDoubleCheck();
         try {
-            rest.postForObject(properties.getHost() + "master/clazz/import", clazz, String.class);
+            JBClazz.importData(clazz);
             System.out.println(Ansi.ansi().fg(Ansi.Color.GREEN).a("Clazz imported.").reset());
         } catch (HttpClientErrorException e) {
             System.out.println(Ansi.ansi().fg(Ansi.Color.RED).a(e.getResponseBodyAsString()).reset());
