@@ -5,7 +5,6 @@ import com.javabaas.javasdk.JBApp;
 import com.javabaas.javasdk.JBUtils;
 import com.javabaas.shell.common.CommandContext;
 import com.javabaas.shell.util.ASKUtil;
-import com.javabaas.shell.util.PropertiesUtil;
 import com.javabaas.shell.util.SignUtil;
 import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,8 +31,6 @@ public class AppCommands implements CommandMarker {
     private CommandContext context;
     @Autowired
     private SignUtil signUtil;
-    @Autowired
-    private PropertiesUtil properties;
 
     @CliAvailabilityIndicator({"export", "info"})
     public boolean isAvailable() {
